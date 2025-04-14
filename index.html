@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام مسح الباركود</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>نظام مسح باركود المنتجات</h1>
+        <p>اضغط على الزر لمسح باركود المنتج وعرض بياناته</p>
+        
+        <button id="scanBtn">بدء المسح</button>
+        
+        <div id="result">
+            <p>سيظهر هنا بيانات المنتج بعد المسح</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('scanBtn').addEventListener('click', function() {
+            // هذه الدالة ستفتح قارئ الباركود
+            startBarcodeScanner();
+        });
+
+        function startBarcodeScanner() {
+            // إذا كان المستخدم على جهاز محمول
+            if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+                // طريقة للجوال باستخدام ZXing
+                window.location.href = 'zxing://scan/?ret=' + 
+                    encodeURIComponent(window.location.href + '?barcode={CODE}');
+            } else {
+                // إذا كان على كمبيوتر
+                alert('الرجاء استخدام هذه الصفحة على جهاز محمول أو مسح الباركود يدوياً');
+                const manualBarcode = prompt('أدخل رقم الباركود يدوياً:');
+                if (manualBarcode) {
+                    fetchProductData(manualBarcode);
+                }
+            }
+        }
+
+        function fetchProductData(barcode) {
+            // استبدل هذا الرابط برابط سكريبت جوجل الخاص بك
+            const googleScriptUrl = 'https://script.google.com/macros/s/XXXXXXXXXXXXXXXX/exec';
+            
+            fetch(`${googleScriptUrl}?barcode=${barcode}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('result');
+                    
+                    if(data.status === 'success') {
+                        resultDiv.innerHTML = `
+                            <h3>بيانات المنتج</h3>
+                            <p><strong>رقم العداد:</strong> ${data.counterNumber}</p>
+                            <p><strong>المكان:</strong> ${data.location}</p>
+                            <p><strong>النوع:</strong> ${data.type}</p>
+                            <p>تم المسح في: ${new Date().toLocaleString()}</p>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <p style="color: red;">⚠️ المنتج غير موجود في النظام</p>
+                            <p>رقم الباركود: ${barcode}</p>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = `
+                        <p style="color: red;">حدث خطأ في الاتصال بالخادم</p>
+                        <p>${error.message}</p>
+                    `;
+                });
+        }
+
+        // إذا كان هناك باركود في رابط الصفحة
+        if(window.location.search.includes('barcode=')) {
+            const barcode = new URLSearchParams(window.location.search).get('barcode');
+            fetchProductData(barcode);
+        }
+    </script>
+</body>
+</html>
